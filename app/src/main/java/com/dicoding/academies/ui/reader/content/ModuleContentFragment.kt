@@ -23,6 +23,7 @@ class ModuleContentFragment : Fragment() {
         fun newInstance(): ModuleContentFragment = ModuleContentFragment()
     }
 
+    private lateinit var viewModel: CourseReaderViewModel
     private lateinit var fragmentModuleContentBinding: FragmentModuleContentBinding
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?,
@@ -36,7 +37,7 @@ class ModuleContentFragment : Fragment() {
         super.onViewCreated(view, savedInstanceState)
         if (activity != null) {
             val factory = ViewModelFactory.getInstance(requireActivity())
-            val viewModel = ViewModelProvider(requireActivity(), factory)[CourseReaderViewModel::class.java]
+            viewModel = ViewModelProvider(requireActivity(), factory)[CourseReaderViewModel::class.java]
 
             fragmentModuleContentBinding.progressBar.visibility = View.VISIBLE
             viewModel.selectedModule.observe(this, {
@@ -49,7 +50,7 @@ class ModuleContentFragment : Fragment() {
                                 if (it.data.contentEntity != null) {
                                     populateWebView(it.data)
                                 }
-//                                setButtonNextPrevState(it.data)
+                                setButtonNextPrevState(it.data)
                                 if (!it.data.read) {
                                     viewModel.readContent(it.data)
                                 }
@@ -60,8 +61,34 @@ class ModuleContentFragment : Fragment() {
                             Toast.makeText(context, "Terjadi kesalahan", Toast.LENGTH_SHORT).show()
                         }
                     }
+
+                    fragmentModuleContentBinding.btnNext.setOnClickListener {
+                        viewModel.setNextPage()
+                    }
+                    fragmentModuleContentBinding.btnPrev.setOnClickListener {
+                        viewModel.setPrevPage()
+                    }
                 }
             })
+        }
+    }
+
+    private fun setButtonNextPrevState(data: ModuleEntity) {
+        if (activity != null) {
+            when (data.position) {
+                0 -> {
+                    fragmentModuleContentBinding.btnPrev.isEnabled = false
+                    fragmentModuleContentBinding.btnNext.isEnabled = true
+                }
+                viewModel.getModuleSize() - 1 -> {
+                    fragmentModuleContentBinding.btnPrev.isEnabled = true
+                    fragmentModuleContentBinding.btnNext.isEnabled = false
+                }
+                else -> {
+                    fragmentModuleContentBinding.btnPrev.isEnabled = true
+                    fragmentModuleContentBinding.btnNext.isEnabled = true
+                }
+            }
         }
     }
 
