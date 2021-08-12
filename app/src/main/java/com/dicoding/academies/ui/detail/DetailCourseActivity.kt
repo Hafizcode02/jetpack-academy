@@ -3,6 +3,7 @@ package com.dicoding.academies.ui.detail
 import android.content.Intent
 import android.os.Bundle
 import android.view.View
+import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.ViewModelProvider
 import androidx.recyclerview.widget.DividerItemDecoration
@@ -16,6 +17,7 @@ import com.dicoding.academies.databinding.ActivityDetailCourseBinding
 import com.dicoding.academies.databinding.ContentDetailCourseBinding
 import com.dicoding.academies.ui.reader.CourseReaderActivity
 import com.dicoding.academies.viewmodel.ViewModelFactory
+import com.dicoding.academies.vo.Status
 
 class DetailCourseActivity : AppCompatActivity() {
 
@@ -50,14 +52,25 @@ class DetailCourseActivity : AppCompatActivity() {
                 activityDetailCourseBinding.content.visibility = View.INVISIBLE
 
                 viewModel.setSelectedCourse(courseId)
-                viewModel.getModules().observe(this, { modules ->
-                    activityDetailCourseBinding.progressBar.visibility = View.GONE
-                    activityDetailCourseBinding.content.visibility = View.VISIBLE
+                viewModel.courseModule.observe(this, {
+                    if (it != null) {
+                        when (it.status) {
+                            Status.LOADING -> activityDetailCourseBinding.progressBar.visibility = View.VISIBLE
+                            Status.SUCCESS -> {
+                                activityDetailCourseBinding.progressBar.visibility = View.GONE
+                                activityDetailCourseBinding.content.visibility = View.VISIBLE
 
-                    adapter.setModules(modules)
-                    adapter.notifyDataSetChanged()
+                                adapter.setModules(it.data?.mModules)
+                                adapter.notifyDataSetChanged()
+                                it.data?.mCourse?.let { it1 -> populateCourse(it1) }
+                            }
+                            Status.ERROR -> {
+                                activityDetailCourseBinding.progressBar.visibility = View.GONE
+                                Toast.makeText(applicationContext, "Terjadi Kesalahan", Toast.LENGTH_SHORT).show()
+                            }
+                        }
+                    }
                 })
-                viewModel.getCourse().observe(this, { course -> populateCourse(course) })
 
             }
         }
